@@ -18,6 +18,13 @@
 
 </div>
 
+<div align="center">
+  <img src="preview.gif" alt="InstantReplyHub Showcase Preview" width="100%" />
+  <p align="center">
+    <sub>🎬 <i>High-definition 1080p Full HD video showcase: <a href="preview.mp4"><b>preview.mp4</b></a></i></sub>
+  </p>
+</div>
+
 ---
 
 > **The 5-Minute Law of Lead Response:**  

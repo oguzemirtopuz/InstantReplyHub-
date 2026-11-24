@@ -27,8 +27,8 @@ async function runTests() {
   // 1.1 EN Modu Testi
   console.log('1.1 İngilizce (EN) AI Yanıtı Test Ediliyor...');
   const enResult = await generateLeadReply({
-    name: 'Sarah Connor',
-    email: 'sarah@skynet.com',
+    name: 'Sarah Jenkins',
+    email: 'sarah@acmecorp.com',
     message: 'We need urgent form integrations for our US website.',
     service: 'Enterprise AI',
     formName: 'Global Contact Form',

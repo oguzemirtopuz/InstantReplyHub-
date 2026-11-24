@@ -9,7 +9,7 @@ export async function GET(
 ) {
   return NextResponse.json({
     status: "active",
-    message: "InstantReplyHub Webhook Endpoint Hazır ve Dinlemede.",
+    message: "InstantReplyHub Webhook Endpoint is Live and Listening.",
     token: params.token,
     timestamp: new Date().toISOString(),
   });
@@ -47,22 +47,33 @@ export async function POST(
       );
     }
 
+    // Dil Tespiti (payload.lang veya mesaj analizi)
+    const language: "tr" | "en" = 
+      payload.lang === "en" || payload.language === "en" || isMostlyEnglish(normalized.message) 
+        ? "en" 
+        : "tr";
+
     // 2. Gemini AI ile Anında Yanıt Üret
     const { reply, model } = await generateLeadReply({
-      name: normalized.name || "Değerli Müşterimiz",
+      name: normalized.name || (language === "en" ? "Valued Client" : "Değerli Müşterimiz"),
       email: normalized.email,
       phone: normalized.phone,
       message: normalized.message,
       service: normalized.service,
       formName: normalized.formName || `Form (${token.slice(0, 8)})`,
+      language,
     });
 
     const elapsedSeconds = Math.max(1, Math.round((Date.now() - startTime) / 1000));
 
     // 3. E-posta Gönderimi (Resend)
+    const subject = language === "en" 
+      ? "Thank you for reaching out! - How can we help?" 
+      : "Talebiniz Alındı! - Size Nasıl Yardımcı Olabiliriz?";
+
     const emailResult = await sendLeadReplyEmail({
       to: normalized.email,
-      subject: `Talebiniz Alındı! - Size Nasıl Yardımcı Olabiliriz?`,
+      subject,
       body: reply,
     });
 
@@ -74,7 +85,7 @@ export async function POST(
           .from("leads")
           .insert({
             form_name: normalized.formName || `Webhook Formu`,
-            name: normalized.name || "İsimsiz Müşteri",
+            name: normalized.name || "Unknown Lead",
             email: normalized.email,
             phone: normalized.phone || null,
             message: normalized.message || null,
@@ -96,7 +107,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: "Lead başarıyla alındı ve anında AI yanıtı iletildi.",
+      message: "Lead processed successfully and instant AI reply delivered.",
       lead: {
         id: leadId,
         name: normalized.name,
@@ -104,16 +115,25 @@ export async function POST(
         status: "responded",
         response_time_seconds: elapsedSeconds,
         ai_model: model,
+        language,
         email_sent: emailResult.success,
       },
     });
   } catch (error: any) {
     console.error("Webhook işleme hatası:", error);
     return NextResponse.json(
-      { error: error.message || "Webhook işlenirken beklenmeyen bir hata oluştu." },
+      { error: error.message || "Unexpected webhook processing error." },
       { status: 500 }
     );
   }
+}
+
+function isMostlyEnglish(text?: string): boolean {
+  if (!text) return false;
+  const englishWords = ["the", "and", "is", "for", "with", "we", "need", "looking", "interested", "price", "demo"];
+  const lower = text.toLowerCase();
+  const matchCount = englishWords.filter(w => lower.includes(w)).length;
+  return matchCount >= 2;
 }
 
 // Yardımcı: Typeform, Tally, Webflow ve Standart JSON payloadlarını ayrıştırır
@@ -123,7 +143,7 @@ function extractLeadData(payload: any) {
   let phone = "";
   let message = "";
   let service = "";
-  let formName = "Web Formu";
+  let formName = "Web Form";
 
   // Standart düz JSON
   if (payload.name || payload.ad || payload.fullName) {
@@ -144,7 +164,7 @@ function extractLeadData(payload: any) {
 
   // Tally Webhook Formatı
   if (payload.data && Array.isArray(payload.data.fields)) {
-    formName = payload.data.formName || "Tally Formu";
+    formName = payload.data.formName || "Tally Form";
     for (const field of payload.data.fields) {
       const label = (field.label || "").toLowerCase();
       const val = field.value;

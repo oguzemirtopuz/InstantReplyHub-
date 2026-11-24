@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { 
-  Radio, 
   Plus, 
   Copy, 
   Check, 
@@ -10,16 +9,15 @@ import {
   ToggleLeft, 
   ToggleRight, 
   Code2, 
-  ExternalLink,
-  ShieldCheck,
-  Zap
 } from "lucide-react";
 import { INITIAL_INTEGRATIONS } from "@/lib/data-store";
 import { Integration, IntegrationPlatform } from "@/types";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
+import { useLanguage } from "@/lib/i18n";
 
 export default function IntegrationsPage() {
+  const { t } = useLanguage();
   const [integrations, setIntegrations] = React.useState<Integration[]>([]);
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
   const [showAddModal, setShowAddModal] = React.useState(false);
@@ -52,7 +50,7 @@ export default function IntegrationsPage() {
   const copyUrl = (token: string, id: string) => {
     navigator.clipboard.writeText(getWebhookUrl(token));
     setCopiedId(id);
-    toast.success("Webhook URL panoya kopyalandı!");
+    toast.success(t.common.copied);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -61,14 +59,14 @@ export default function IntegrationsPage() {
       item.id === id ? { ...item, auto_reply_enabled: !item.auto_reply_enabled } : item
     );
     saveIntegrations(updated);
-    toast.success("Otomatik yanıt durumu güncellendi.");
+    toast.success(t.common.save);
   };
 
   const deleteIntegration = (id: string) => {
-    if (confirm("Bu entegrasyonu silmek istediğinize emin misiniz?")) {
+    if (confirm(t.common.delete + "?")) {
       const updated = integrations.filter((item) => item.id !== id);
       saveIntegrations(updated);
-      toast.success("Entegrasyon silindi.");
+      toast.success(t.common.delete);
     }
   };
 
@@ -90,16 +88,16 @@ export default function IntegrationsPage() {
     saveIntegrations([...integrations, newInt]);
     setNewFormName("");
     setShowAddModal(false);
-    toast.success("Yeni form entegrasyonu başarıyla eklendi!");
+    toast.success(t.integrations.modalSubmit);
   };
 
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">Form & Webhook Entegrasyonları</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">{t.integrations.title}</h2>
           <p className="text-sm text-muted-foreground">
-            Typeform, Tally, Webflow veya özel sitenizin formlarını bağlayın.
+            {t.integrations.subtitle}
           </p>
         </div>
 
@@ -108,7 +106,7 @@ export default function IntegrationsPage() {
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold transition shadow-sm"
         >
           <Plus className="h-4 w-4" />
-          Yeni Form Bağla
+          {t.integrations.addNewForm}
         </button>
       </div>
 
@@ -125,7 +123,7 @@ export default function IntegrationsPage() {
                   <button
                     onClick={() => toggleAutoReply(item.id)}
                     className="p-1 text-muted-foreground hover:text-foreground"
-                    title={item.auto_reply_enabled ? "Otomatik yanıtı kapat" : "Otomatik yanıtı aç"}
+                    title={item.auto_reply_enabled ? t.common.inactive : t.common.active}
                   >
                     {item.auto_reply_enabled ? (
                       <ToggleRight className="h-6 w-6 text-emerald-600" />
@@ -136,7 +134,7 @@ export default function IntegrationsPage() {
                   <button
                     onClick={() => deleteIntegration(item.id)}
                     className="p-1 text-muted-foreground hover:text-destructive"
-                    title="Sil"
+                    title={t.common.delete}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -145,12 +143,12 @@ export default function IntegrationsPage() {
 
               <div>
                 <h3 className="font-bold text-base text-foreground">{item.name}</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Eklenme: {formatDate(item.created_at)}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t.common.date}: {formatDate(item.created_at)}</p>
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Webhook Hedef URL
+                  {t.integrations.webhookTargetUrl}
                 </label>
                 <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/50 border border-border">
                   <input
@@ -162,7 +160,7 @@ export default function IntegrationsPage() {
                   <button
                     onClick={() => copyUrl(item.webhook_token, item.id)}
                     className="p-1 rounded hover:bg-accent text-foreground"
-                    title="Kopyala"
+                    title={t.common.copy}
                   >
                     {copiedId === item.id ? (
                       <Check className="h-3.5 w-3.5 text-emerald-600" />
@@ -175,9 +173,9 @@ export default function IntegrationsPage() {
             </div>
 
             <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-              <span>Otomatik Yanıt:</span>
+              <span>{t.integrations.autoReplyLabel}:</span>
               <span className={`font-semibold ${item.auto_reply_enabled ? "text-emerald-600" : "text-amber-600"}`}>
-                {item.auto_reply_enabled ? "Aktif" : "Devre Dışı"}
+                {item.auto_reply_enabled ? t.common.active : t.common.inactive}
               </span>
             </div>
           </div>
@@ -188,10 +186,10 @@ export default function IntegrationsPage() {
       <div className="p-6 rounded-2xl border border-border bg-card shadow-sm space-y-4">
         <div className="flex items-center gap-2">
           <Code2 className="h-5 w-5 text-primary" />
-          <h3 className="font-bold text-lg text-foreground">Geliştirici & Webhook Dokümantasyonu</h3>
+          <h3 className="font-bold text-lg text-foreground">{t.integrations.docsTitle}</h3>
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Formunuzdan gelen POST isteklerini aşağıdaki JSON formatında webhook adresinize iletmeniz yeterlidir:
+          {t.integrations.docsDesc}
         </p>
 
         <div className="p-4 rounded-xl bg-slate-950 text-slate-100 font-mono text-xs overflow-x-auto">
@@ -199,11 +197,11 @@ export default function IntegrationsPage() {
 // Content-Type: application/json
 
 {
-  "name": "Müşteri Adı Soyadı",
-  "email": "musteri@ornek.com",
-  "phone": "+90 555 123 4567",
-  "message": "Fiyat teklifi ve entegrasyon detaylarını öğrenmek istiyorum.",
-  "service": "Kurumsal SaaS"
+  "name": "Alex Morgan",
+  "email": "alex@company.com",
+  "phone": "+1 555 123 4567",
+  "message": "Looking for automated AI lead responses and custom integrations.",
+  "service": "Enterprise SaaS"
 }`}</pre>
         </div>
       </div>
@@ -213,7 +211,7 @@ export default function IntegrationsPage() {
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-card border border-border rounded-2xl max-w-md w-full p-6 shadow-xl space-y-5">
             <div className="flex items-center justify-between border-b border-border pb-3">
-              <h4 className="text-lg font-bold text-foreground">Yeni Form Entegrasyonu Bağla</h4>
+              <h4 className="text-lg font-bold text-foreground">{t.integrations.modalTitle}</h4>
               <button
                 onClick={() => setShowAddModal(false)}
                 className="p-1 rounded-lg border border-border hover:bg-accent text-muted-foreground"
@@ -225,12 +223,12 @@ export default function IntegrationsPage() {
             <form onSubmit={handleAddIntegration} className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-foreground block mb-1.5">
-                  Form Adı / Tanımı
+                  {t.integrations.modalFormName}
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Örn: Landing Page İletişim Formu"
+                  placeholder="e.g. Landing Page Contact Form"
                   value={newFormName}
                   onChange={(e) => setNewFormName(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
@@ -239,7 +237,7 @@ export default function IntegrationsPage() {
 
               <div>
                 <label className="text-xs font-semibold text-foreground block mb-1.5">
-                  Form Platformu
+                  {t.integrations.modalFormPlatform}
                 </label>
                 <select
                   value={newPlatform}
@@ -250,7 +248,7 @@ export default function IntegrationsPage() {
                   <option value="tally">Tally</option>
                   <option value="webflow">Webflow</option>
                   <option value="google_forms">Google Forms</option>
-                  <option value="custom">Özel Webhook / API</option>
+                  <option value="custom">Custom Webhook / API</option>
                 </select>
               </div>
 
@@ -260,13 +258,13 @@ export default function IntegrationsPage() {
                   onClick={() => setShowAddModal(false)}
                   className="px-4 py-2 rounded-xl border border-border hover:bg-accent text-sm font-semibold transition"
                 >
-                  İptal
+                  {t.common.cancel}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold transition"
                 >
-                  Entegrasyonu Oluştur
+                  {t.integrations.modalSubmit}
                 </button>
               </div>
             </form>

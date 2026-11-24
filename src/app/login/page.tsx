@@ -3,12 +3,16 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Zap, Mail, Lock, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
+import { Zap, Mail, Lock, ArrowRight, Sparkles } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { useLanguage } from "@/lib/i18n";
+import { LanguageToggle } from "@/components/language-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
@@ -19,9 +23,8 @@ export default function LoginPage() {
     setLoading(true);
 
     if (!isSupabaseConfigured || !supabase) {
-      // Supabase ayarlanmadıysa yerel oturumla devam et
       localStorage.setItem("irh_user", JSON.stringify({ email }));
-      toast.success("Demo oturumu açıldı!");
+      toast.success(t.login.btnDemo);
       router.push("/dashboard");
       return;
     }
@@ -30,16 +33,16 @@ export default function LoginPage() {
       if (isRegister) {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        toast.success("Kayıt başarılı! Lütfen e-postanızı onaylayın veya panele geçin.");
+        toast.success(t.login.btnSubmitRegister);
         router.push("/dashboard");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        toast.success("Giriş yapıldı!");
+        toast.success(t.login.btnSubmitLogin);
         router.push("/dashboard");
       }
     } catch (err: any) {
-      toast.error(err.message || "Giriş işlemi başarısız oldu.");
+      toast.error(err.message || "Error");
     } finally {
       setLoading(false);
     }
@@ -47,12 +50,17 @@ export default function LoginPage() {
 
   const handleDemoLogin = () => {
     localStorage.setItem("irh_user", JSON.stringify({ email: "demo@instantreplyhub.com" }));
-    toast.success("Demo kullanıcısı olarak giriş yapıldı!");
+    toast.success(t.login.btnDemo);
     router.push("/dashboard");
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-muted/30">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-muted/30 relative">
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        <LanguageToggle />
+        <ThemeToggle />
+      </div>
+
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
           <Link href="/" className="inline-flex items-center gap-2 mb-2">
@@ -64,10 +72,10 @@ export default function LoginPage() {
             </span>
           </Link>
           <h2 className="text-2xl font-bold tracking-tight text-foreground">
-            {isRegister ? "Yeni Hesap Oluşturun" : "Hesabınıza Giriş Yapın"}
+            {isRegister ? t.login.titleRegister : t.login.titleLogin}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Formlarınızdan gelen her lead'i saniyeler içinde karşılayın.
+            {t.login.subtitle}
           </p>
         </div>
 
@@ -75,14 +83,14 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="text-xs font-semibold text-foreground block mb-1.5">
-                E-posta Adresi
+                {t.login.emailLabel}
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <input
                   type="email"
                   required
-                  placeholder="ornek@sirketiniz.com"
+                  placeholder="name@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
@@ -92,7 +100,7 @@ export default function LoginPage() {
 
             <div>
               <label className="text-xs font-semibold text-foreground block mb-1.5">
-                Şifre
+                {t.login.passwordLabel}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -112,14 +120,14 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-bold transition shadow-sm disabled:opacity-50"
             >
-              {isRegister ? "Kayıt Ol & Başla" : "Giriş Yap"}
+              {isRegister ? t.login.btnSubmitRegister : t.login.btnSubmitLogin}
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>
 
           <div className="relative flex items-center justify-center">
             <div className="border-t border-border w-full" />
-            <span className="bg-card px-3 text-xs text-muted-foreground uppercase">veya</span>
+            <span className="bg-card px-3 text-xs text-muted-foreground uppercase">{t.login.orDivider}</span>
           </div>
 
           <button
@@ -128,7 +136,7 @@ export default function LoginPage() {
             className="w-full inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl border border-border bg-background hover:bg-accent text-sm font-semibold transition"
           >
             <Sparkles className="h-4 w-4 text-primary" />
-            Hemen Demo Olarak Giriş Yap
+            {t.login.btnDemo}
           </button>
 
           <div className="text-center pt-2">
@@ -137,9 +145,7 @@ export default function LoginPage() {
               onClick={() => setIsRegister(!isRegister)}
               className="text-xs text-primary hover:underline font-semibold"
             >
-              {isRegister
-                ? "Zaten hesabınız var mı? Giriş yapın"
-                : "Hesabınız yok mu? Yeni hesap oluşturun"}
+              {isRegister ? t.login.toggleToLogin : t.login.toggleToRegister}
             </button>
           </div>
         </div>

@@ -2,26 +2,23 @@
 
 import * as React from "react";
 import { 
-  Users, 
   Search, 
   Filter, 
-  Download, 
   Trash2, 
   Eye, 
   Sparkles, 
   Clock, 
   MailCheck, 
-  Check, 
-  Copy,
-  AlertCircle,
   FileSpreadsheet
 } from "lucide-react";
 import { INITIAL_LEADS } from "@/lib/data-store";
 import { Lead } from "@/types";
 import { formatDate, formatSeconds } from "@/lib/utils";
 import { toast } from "sonner";
+import { useLanguage } from "@/lib/i18n";
 
 export default function LeadsManagementPage() {
+  const { t } = useLanguage();
   const [leads, setLeads] = React.useState<Lead[]>([]);
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
@@ -59,7 +56,7 @@ export default function LeadsManagementPage() {
   // Manuel AI Yanıt Tetikleme
   const triggerManualAIResponse = async (lead: Lead) => {
     setProcessingId(lead.id);
-    toast.info("Gemini AI ile kişiselleştirilmiş yanıt hazırlanıyor...");
+    toast.info(t.simulator.generatingBtn);
 
     try {
       const res = await fetch("/api/generate-reply", {
@@ -90,12 +87,12 @@ export default function LeadsManagementPage() {
       );
 
       saveLeads(updated);
-      toast.success(`${lead.name} için AI yanıtı oluşturuldu ve kaydedildi!`);
+      toast.success(`${lead.name}: ${t.common.saved || "AI Response Ready!"}`);
       if (selectedLead && selectedLead.id === lead.id) {
         setSelectedLead(updated.find((u) => u.id === lead.id) || null);
       }
     } catch (err: any) {
-      toast.error(err.message || "Bir hata oluştu");
+      toast.error(err.message || "Error");
     } finally {
       setProcessingId(null);
     }
@@ -103,10 +100,10 @@ export default function LeadsManagementPage() {
 
   // Silme
   const handleDelete = (id: string) => {
-    if (confirm("Bu lead kaydını silmek istediğinize emin misiniz?")) {
+    if (confirm(t.leads.deleteConfirm)) {
       const updated = leads.filter((l) => l.id !== id);
       saveLeads(updated);
-      toast.success("Lead silindi.");
+      toast.success(t.common.delete);
       if (selectedLead && selectedLead.id === id) setSelectedLead(null);
     }
   };
@@ -114,11 +111,11 @@ export default function LeadsManagementPage() {
   // CSV Dışa Aktarımı
   const exportCSV = () => {
     if (leads.length === 0) {
-      toast.error("Dışa aktarılacak lead bulunmuyor.");
+      toast.error(t.leads.noLeadsFound);
       return;
     }
 
-    const headers = ["ID", "Müşteri Adı", "E-posta", "Telefon", "Kaynak Form", "Durum", "Yanıt Süresi (sn)", "Tarih"];
+    const headers = ["ID", "Customer Name", "Email", "Phone", "Source Form", "Status", "Response Time (s)", "Date"];
     const rows = leads.map((l) => [
       l.id,
       `"${l.name.replace(/"/g, '""')}"`,
@@ -138,15 +135,15 @@ export default function LeadsManagementPage() {
     link.download = `InstantReplyHub_Leads_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    toast.success("CSV dosyası başarıyla indirildi!");
+    toast.success("CSV Downloaded!");
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">Lead Yönetimi</h2>
-          <p className="text-sm text-muted-foreground">Tüm gelen form kayıtlarını inceleyin, filtreleyin ve AI yanıtlarını yönetin.</p>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">{t.leads.title}</h2>
+          <p className="text-sm text-muted-foreground">{t.leads.subtitle}</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -155,7 +152,7 @@ export default function LeadsManagementPage() {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-card hover:bg-accent text-sm font-semibold transition shadow-sm"
           >
             <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-            CSV Olarak İndir
+            {t.leads.exportCsv}
           </button>
         </div>
       </div>
@@ -166,7 +163,7 @@ export default function LeadsManagementPage() {
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="İsim, e-posta veya mesaj ara..."
+            placeholder={t.leads.searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
@@ -180,9 +177,9 @@ export default function LeadsManagementPage() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 py-2 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           >
-            <option value="all">Tüm Durumlar ({leads.length})</option>
-            <option value="responded">Yanıtlananlar ({leads.filter((l) => l.status === "responded").length})</option>
-            <option value="pending">Bekleyenler ({leads.filter((l) => l.status === "pending").length})</option>
+            <option value="all">{t.leads.allStatus} ({leads.length})</option>
+            <option value="responded">{t.leads.onlyResponded} ({leads.filter((l) => l.status === "responded").length})</option>
+            <option value="pending">{t.leads.onlyPending} ({leads.filter((l) => l.status === "pending").length})</option>
           </select>
         </div>
       </div>
@@ -193,20 +190,20 @@ export default function LeadsManagementPage() {
           <table className="w-full text-left text-sm">
             <thead className="bg-muted/40 text-muted-foreground text-xs uppercase tracking-wider border-b border-border">
               <tr>
-                <th className="py-3 px-4 font-semibold">Müşteri</th>
-                <th className="py-3 px-4 font-semibold">Kaynak Form</th>
-                <th className="py-3 px-4 font-semibold">Mesaj Özeti</th>
-                <th className="py-3 px-4 font-semibold">Durum</th>
-                <th className="py-3 px-4 font-semibold">Yanıt Süresi</th>
-                <th className="py-3 px-4 font-semibold">Tarih</th>
-                <th className="py-3 px-4 font-semibold text-right">İşlemler</th>
+                <th className="py-3 px-4 font-semibold">{t.dashboard.tableCustomer}</th>
+                <th className="py-3 px-4 font-semibold">{t.dashboard.tableForm}</th>
+                <th className="py-3 px-4 font-semibold">{t.dashboard.modalIncomingMessage}</th>
+                <th className="py-3 px-4 font-semibold">{t.dashboard.tableStatus}</th>
+                <th className="py-3 px-4 font-semibold">{t.dashboard.tableTime}</th>
+                <th className="py-3 px-4 font-semibold">{t.dashboard.tableDate}</th>
+                <th className="py-3 px-4 font-semibold text-right">{t.dashboard.tableAction}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {filteredLeads.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-muted-foreground">
-                    Aramanıza uygun lead bulunamadı.
+                    {t.leads.noLeadsFound}
                   </td>
                 </tr>
               ) : (
@@ -226,12 +223,12 @@ export default function LeadsManagementPage() {
                       {lead.status === "responded" ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                           <MailCheck className="h-3 w-3" />
-                          Yanıtlandı
+                          {t.dashboard.statusResponded}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400">
                           <Clock className="h-3 w-3" />
-                          Bekliyor
+                          {t.dashboard.statusPending}
                         </span>
                       )}
                     </td>
@@ -247,7 +244,7 @@ export default function LeadsManagementPage() {
                           <button
                             onClick={() => triggerManualAIResponse(lead)}
                             disabled={processingId === lead.id}
-                            title="AI Yanıtı Üret"
+                            title={t.leads.generateAiBtn}
                             className="p-1.5 rounded-lg border border-primary/30 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition text-xs"
                           >
                             <Sparkles className="h-3.5 w-3.5" />
@@ -255,14 +252,14 @@ export default function LeadsManagementPage() {
                         )}
                         <button
                           onClick={() => setSelectedLead(lead)}
-                          title="İncele"
+                          title={t.common.inspect}
                           className="p-1.5 rounded-lg border border-border hover:bg-accent text-foreground transition"
                         >
                           <Eye className="h-3.5 w-3.5" />
                         </button>
                         <button
                           onClick={() => handleDelete(lead.id)}
-                          title="Sil"
+                          title={t.common.delete}
                           className="p-1.5 rounded-lg border border-border hover:bg-destructive/10 hover:text-destructive transition"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -284,7 +281,7 @@ export default function LeadsManagementPage() {
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div>
                 <h4 className="text-lg font-bold text-foreground">{selectedLead.name}</h4>
-                <p className="text-xs text-muted-foreground">{selectedLead.email} • {selectedLead.phone || "Telefon yok"}</p>
+                <p className="text-xs text-muted-foreground">{selectedLead.email} • {selectedLead.phone || "-"}</p>
               </div>
               <button
                 onClick={() => setSelectedLead(null)}
@@ -297,10 +294,10 @@ export default function LeadsManagementPage() {
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Gelen Form Mesajı
+                  {t.dashboard.modalIncomingMessage}
                 </label>
                 <div className="mt-1 p-3 rounded-xl bg-muted/40 border border-border text-sm text-foreground leading-relaxed">
-                  {selectedLead.message || "Mesaj yok."}
+                  {selectedLead.message || "-"}
                 </div>
               </div>
 
@@ -308,7 +305,7 @@ export default function LeadsManagementPage() {
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <Sparkles className="h-3.5 w-3.5 text-primary" />
-                    AI Tarafından Gönderilen Yanıt
+                    {t.dashboard.modalAiGenerated}
                   </label>
                   {selectedLead.ai_model && (
                     <span className="text-[11px] text-muted-foreground font-mono">
@@ -317,7 +314,7 @@ export default function LeadsManagementPage() {
                   )}
                 </div>
                 <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed">
-                  {selectedLead.ai_response || "Henüz yanıt üretilmedi."}
+                  {selectedLead.ai_response || "-"}
                 </div>
               </div>
             </div>
@@ -330,7 +327,7 @@ export default function LeadsManagementPage() {
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold transition"
                 >
                   <Sparkles className="h-4 w-4" />
-                  Şimdi AI Yanıtı Oluştur & Gönder
+                  {t.leads.generateAiBtn}
                 </button>
               ) : <div />}
 
@@ -339,18 +336,18 @@ export default function LeadsManagementPage() {
                   onClick={() => {
                     if (selectedLead.ai_response) {
                       navigator.clipboard.writeText(selectedLead.ai_response);
-                      toast.success("AI Yanıt metni kopyalandı!");
+                      toast.success(t.common.copied);
                     }
                   }}
                   className="px-4 py-2 rounded-xl border border-border hover:bg-accent text-sm font-semibold transition"
                 >
-                  Metni Kopyala
+                  {t.dashboard.modalCopyText}
                 </button>
                 <button
                   onClick={() => setSelectedLead(null)}
                   className="px-4 py-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold transition"
                 >
-                  Kapat
+                  {t.common.close}
                 </button>
               </div>
             </div>

@@ -1,8 +1,14 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowRight, Bot, Zap, Clock, ShieldCheck, CheckCircle2, Sparkles, Send, BarChart3 } from "lucide-react";
+import { ArrowRight, Bot, Zap, Sparkles, Send } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageToggle } from "@/components/language-toggle";
+import { useLanguage } from "@/lib/i18n";
 
 export default function HomePage() {
+  const { t } = useLanguage();
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Üst Navigasyon */}
@@ -17,13 +23,14 @@ export default function HomePage() {
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <LanguageToggle />
             <ThemeToggle />
             <Link
               href="/dashboard"
               className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition shadow-sm"
             >
-              Panoya Git
+              {t.nav.overview}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -35,16 +42,19 @@ export default function HomePage() {
         <section className="py-20 lg:py-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/10 text-primary text-xs font-semibold mb-8 animate-fade-in">
             <Sparkles className="h-3.5 w-3.5" />
-            <span>AI Destekli Satış ve Lead Dönüşüm Motoru</span>
+            <span>{t.landing.badge}</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-foreground max-w-4xl mx-auto leading-tight sm:leading-none">
-            Lead'iniz <span className="text-primary underline decoration-primary/40 underline-offset-8">Saniyeler İçinde</span> Yanıtlansın, Satışınız Katlansın.
+            {t.landing.heroTitlePrefix}
+            <span className="text-primary underline decoration-primary/40 underline-offset-8">
+              {t.landing.heroTitleHighlight}
+            </span>
+            {t.landing.heroTitleSuffix}
           </h1>
 
           <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Landing page ve formlarınızı (Typeform, Tally, Webflow) dakikalar içinde bağlayın.
-            Gelen her potansiyel müşteriye yapay zeka ile kişiselleştirilmiş, samimi ve satış odaklı ilk e-postayı <strong>5 saniye içinde</strong> gönderin.
+            {t.landing.heroSubtitle}
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -52,30 +62,34 @@ export default function HomePage() {
               href="/dashboard"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition shadow-lg shadow-primary/20"
             >
-              Hemen Ücretsiz Başla
+              {t.landing.ctaStart}
               <ArrowRight className="h-5 w-5" />
             </Link>
             <Link
               href="/dashboard/simulator"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-semibold border border-border bg-card hover:bg-accent transition"
             >
-              Canlı AI Simülatörünü Dene
+              {t.landing.ctaSimulator}
             </Link>
           </div>
 
           {/* İstatistik Göstergesi */}
           <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
             <div className="p-6 rounded-2xl border border-border bg-card/50 shadow-sm text-center">
-              <div className="text-3xl font-black text-primary">5 Saniye</div>
-              <div className="text-sm text-muted-foreground mt-1">Ortalama İlk Yanıt Süresi</div>
+              <div className="text-3xl font-black text-primary">{t.landing.metricAvgTime}</div>
+              <div className="text-sm text-muted-foreground mt-1">{t.landing.metricAvgTimeDesc}</div>
             </div>
             <div className="p-6 rounded-2xl border border-border bg-card/50 shadow-sm text-center">
-              <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400">%82+</div>
-              <div className="text-sm text-muted-foreground mt-1">Dönüşüm Artışı (İlk 5 Dk İçinde)</div>
+              <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
+                {t.landing.metricBoost}
+              </div>
+              <div className="text-sm text-muted-foreground mt-1">{t.landing.metricBoostDesc}</div>
             </div>
             <div className="p-6 rounded-2xl border border-border bg-card/50 shadow-sm text-center">
-              <div className="text-3xl font-black text-blue-600 dark:text-blue-400">7/24</div>
-              <div className="text-sm text-muted-foreground mt-1">Sıfır İnsan Müdahalesi ile Otomasyon</div>
+              <div className="text-3xl font-black text-blue-600 dark:text-blue-400">
+                {t.landing.metricAutomation}
+              </div>
+              <div className="text-sm text-muted-foreground mt-1">{t.landing.metricAutomationDesc}</div>
             </div>
           </div>
         </section>
@@ -84,8 +98,8 @@ export default function HomePage() {
         <section className="py-20 bg-muted/40 border-y border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-3xl font-bold tracking-tight">Nasıl Çalışır?</h2>
-              <p className="mt-3 text-muted-foreground">3 basit adımda gelen her lead'i sıcak bir satış fırsatına dönüştürün.</p>
+              <h2 className="text-3xl font-bold tracking-tight">{t.landing.howItWorksTitle}</h2>
+              <p className="mt-3 text-muted-foreground">{t.landing.howItWorksSubtitle}</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -93,9 +107,9 @@ export default function HomePage() {
                 <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-6">
                   <Zap className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">1. Formunu Bağla</h3>
+                <h3 className="text-xl font-bold mb-2">{t.landing.step1Title}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  Webflow, Typeform, Tally veya özel sitenizin form webhook'unu tek tıkla entegre edin. Kodlama gerekmez.
+                  {t.landing.step1Desc}
                 </p>
               </div>
 
@@ -103,9 +117,9 @@ export default function HomePage() {
                 <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-6">
                   <Bot className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">2. AI Kişiselleştirsin</h3>
+                <h3 className="text-xl font-bold mb-2">{t.landing.step2Title}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  Gemini AI, müşterinin bütçesini, ilgilendiği hizmeti ve mesajını analiz ederek şablon değil, insansı ve ikna edici bir e-posta hazırlar.
+                  {t.landing.step2Desc}
                 </p>
               </div>
 
@@ -113,9 +127,9 @@ export default function HomePage() {
                 <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-6">
                   <Send className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">3. Anında Yanıtla & Kazan</h3>
+                <h3 className="text-xl font-bold mb-2">{t.landing.step3Title}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  Müşteri henüz sitenizden çıkmadan gelen kutusuna sıcak teklifinizi veya toplantı bağlantınızı ulaştırın.
+                  {t.landing.step3Desc}
                 </p>
               </div>
             </div>
@@ -126,11 +140,11 @@ export default function HomePage() {
       {/* Alt Bilgi */}
       <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© 2026 InstantReplyHub. Tüm hakları saklıdır.</p>
+          <p>{t.landing.footerCopyright}</p>
           <div className="flex gap-6">
-            <Link href="/dashboard" className="hover:underline">Dashboard</Link>
-            <Link href="/dashboard/leads" className="hover:underline">Lead Yönetimi</Link>
-            <Link href="/dashboard/simulator" className="hover:underline">Simülatör</Link>
+            <Link href="/dashboard" className="hover:underline">{t.nav.overview}</Link>
+            <Link href="/dashboard/leads" className="hover:underline">{t.nav.leads}</Link>
+            <Link href="/dashboard/simulator" className="hover:underline">{t.nav.simulator}</Link>
           </div>
         </div>
       </footer>

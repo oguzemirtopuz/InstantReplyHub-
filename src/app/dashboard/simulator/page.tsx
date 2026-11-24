@@ -5,25 +5,39 @@ import {
   Sparkles, 
   Send, 
   Clock, 
-  CheckCircle2, 
   Bot, 
-  ArrowRight, 
   Copy, 
   RefreshCw,
-  MailCheck,
-  AlertCircle
 } from "lucide-react";
 import { Lead } from "@/types";
 import { toast } from "sonner";
+import { useLanguage } from "@/lib/i18n";
 
 export default function SimulatorPage() {
+  const { t, language } = useLanguage();
+
   const [formData, setFormData] = React.useState({
-    name: "Emre Can Tekin",
-    email: "emre@startupstudios.com",
+    name: language === "tr" ? "Emre Can Tekin" : "Alex Morgan",
+    email: language === "tr" ? "emre@startupstudios.com" : "alex@startupstudios.com",
     phone: "+90 533 111 22 33",
-    service: "Özel AI Entegrasyonu",
-    message: "Şirketimiz için gelen müşteri formlarını anında yapay zeka ile karşılamak istiyoruz. Hangi modelleri destekliyorsunuz ve kurulum ne kadar sürer?",
+    service: language === "tr" ? "Özel AI Entegrasyonu" : "Custom AI Integration",
+    message: language === "tr" 
+      ? "Şirketimiz için gelen müşteri formlarını anında yapay zeka ile karşılamak istiyoruz. Hangi modelleri destekliyorsunuz ve kurulum ne kadar sürer?"
+      : "We want to instantly respond to incoming customer forms with AI. Which models do you support and how fast is onboarding?",
   });
+
+  // Dil değiştiğinde form örneklerini dile göre güncelle
+  React.useEffect(() => {
+    setFormData({
+      name: language === "tr" ? "Emre Can Tekin" : "Alex Morgan",
+      email: language === "tr" ? "emre@startupstudios.com" : "alex@startupstudios.com",
+      phone: "+90 533 111 22 33",
+      service: language === "tr" ? "Özel AI Entegrasyonu" : "Custom AI Integration",
+      message: language === "tr" 
+        ? "Şirketimiz için gelen müşteri formlarını anında yapay zeka ile karşılamak istiyoruz. Hangi modelleri destekliyorsunuz ve kurulum ne kadar sürer?"
+        : "We want to instantly respond to incoming customer forms with AI. Which models do you support and how fast is onboarding?",
+    });
+  }, [language]);
 
   const [loading, setLoading] = React.useState(false);
   const [result, setResult] = React.useState<{
@@ -50,7 +64,8 @@ export default function SimulatorPage() {
           phone: formData.phone,
           service: formData.service,
           message: formData.message,
-          formName: "Canlı Simülatör Formu",
+          formName: language === "tr" ? "Canlı Simülatör Formu" : "Live Simulator Form",
+          language,
         }),
       });
 
@@ -73,7 +88,7 @@ export default function SimulatorPage() {
       let currentLeads: Lead[] = stored ? JSON.parse(stored) : [];
       const newLead: Lead = {
         id: `sim-${Date.now()}`,
-        form_name: "Canlı Simülatör Formu",
+        form_name: language === "tr" ? "Canlı Simülatör Formu" : "Live Simulator Form",
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
@@ -89,9 +104,9 @@ export default function SimulatorPage() {
       currentLeads = [newLead, ...currentLeads];
       localStorage.setItem("irh_leads", JSON.stringify(currentLeads));
 
-      toast.success(`Yapay zeka ${elapsedSeconds} saniyede yanıt üretti ve lead kaydedildi!`);
+      toast.success(`${elapsedSeconds}s: ${t.simulator.secondsNotice}`);
     } catch (err: any) {
-      toast.error(err.message || "Simülasyon sırasında hata oluştu.");
+      toast.error(err.message || "Error");
     } finally {
       setLoading(false);
     }
@@ -102,14 +117,13 @@ export default function SimulatorPage() {
       <div>
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary mb-2">
           <Sparkles className="h-3.5 w-3.5" />
-          <span>Etkileşimli Test Ortamı</span>
+          <span>{t.simulator.badge}</span>
         </div>
         <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-          Canlı Lead ve AI Yanıt Simülatörü
+          {t.simulator.title}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Aşağıdaki formu sanki sitenizi ziyaret eden bir potansiyel müşteri gibi doldurun.
-          Yapay zekanın saniyeler içinde nasıl bir teklif & karşılama yanıtı ürettiğini anında canlı test edin.
+          {t.simulator.subtitle}
         </p>
       </div>
 
@@ -117,14 +131,14 @@ export default function SimulatorPage() {
         {/* Form Alanı */}
         <div className="p-6 sm:p-8 rounded-2xl border border-border bg-card shadow-sm space-y-6">
           <div className="flex items-center justify-between border-b border-border pb-4">
-            <h3 className="font-bold text-base text-foreground">Müşteri Formu (Giriş)</h3>
-            <span className="text-xs text-muted-foreground font-mono">Örnek Form</span>
+            <h3 className="font-bold text-base text-foreground">{t.simulator.formTitle}</h3>
+            <span className="text-xs text-muted-foreground font-mono">Sandbox</span>
           </div>
 
           <form onSubmit={handleSimulate} className="space-y-4">
             <div>
               <label className="text-xs font-semibold text-foreground block mb-1.5">
-                Müşteri Adı Soyadı
+                {t.simulator.clientName}
               </label>
               <input
                 type="text"
@@ -138,7 +152,7 @@ export default function SimulatorPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-semibold text-foreground block mb-1.5">
-                  E-posta Adresi
+                  {t.simulator.clientEmail}
                 </label>
                 <input
                   type="email"
@@ -150,7 +164,7 @@ export default function SimulatorPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-foreground block mb-1.5">
-                  Telefon Numarası
+                  {t.simulator.clientPhone}
                 </label>
                 <input
                   type="text"
@@ -163,7 +177,7 @@ export default function SimulatorPage() {
 
             <div>
               <label className="text-xs font-semibold text-foreground block mb-1.5">
-                İlgilenilen Hizmet / Paket
+                {t.simulator.clientService}
               </label>
               <input
                 type="text"
@@ -175,7 +189,7 @@ export default function SimulatorPage() {
 
             <div>
               <label className="text-xs font-semibold text-foreground block mb-1.5">
-                Müşteri Mesajı / Talebi
+                {t.simulator.clientMessage}
               </label>
               <textarea
                 rows={3}
@@ -194,12 +208,12 @@ export default function SimulatorPage() {
               {loading ? (
                 <>
                   <RefreshCw className="h-4 w-4 animate-spin" />
-                  Gemini AI Yanıtı Hazırlıyor...
+                  {t.simulator.generatingBtn}
                 </>
               ) : (
                 <>
                   <Send className="h-4 w-4" />
-                  Simülasyonu Başlat & AI Yanıtını Üret
+                  {t.simulator.startBtn}
                 </>
               )}
             </button>
@@ -211,12 +225,12 @@ export default function SimulatorPage() {
           <div className="flex items-center justify-between border-b border-border pb-4">
             <h3 className="font-bold text-base text-foreground flex items-center gap-2">
               <Bot className="h-4 w-4 text-primary" />
-              Üretilen Otomatik E-posta Yanıtı
+              {t.simulator.outputTitle}
             </h3>
             {result && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <Clock className="h-3 w-3" />
-                {result.seconds} saniyede oluşturuldu
+                {result.seconds} {t.simulator.secondsNotice}
               </span>
             )}
           </div>
@@ -224,7 +238,7 @@ export default function SimulatorPage() {
           {loading ? (
             <div className="h-72 flex flex-col items-center justify-center space-y-3 text-muted-foreground">
               <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-              <p className="text-xs font-medium">Gemini AI form alanlarını analiz ediyor ve metni oluşturuyor...</p>
+              <p className="text-xs font-medium">{t.simulator.generatingBtn}</p>
             </div>
           ) : result ? (
             <div className="space-y-4 animate-fade-in">
@@ -237,21 +251,21 @@ export default function SimulatorPage() {
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(result.reply);
-                    toast.success("E-posta metni kopyalandı!");
+                    toast.success(t.common.copied);
                   }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-accent text-foreground transition font-medium"
                 >
                   <Copy className="h-3.5 w-3.5" />
-                  Metni Kopyala
+                  {t.simulator.copyReplyBtn}
                 </button>
               </div>
             </div>
           ) : (
             <div className="h-72 flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-border rounded-xl text-muted-foreground">
               <Sparkles className="h-8 w-8 text-muted-foreground mb-3 opacity-60" />
-              <p className="font-semibold text-sm text-foreground">Henüz simülasyon başlatılmadı</p>
+              <p className="font-semibold text-sm text-foreground">{t.simulator.emptyTitle}</p>
               <p className="text-xs mt-1 max-w-xs">
-                Soldaki formu doldurup "Simülasyonu Başlat" butonuna tıklayarak canlı çıktıyı burada görebilirsiniz.
+                {t.simulator.emptySubtitle}
               </p>
             </div>
           )}

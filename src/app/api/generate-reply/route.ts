@@ -5,7 +5,7 @@ import { DEFAULT_AI_TEMPLATE } from "@/lib/data-store";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, email, phone, message, service, formName, template } = body;
+    const { name, email, phone, message, service, formName, template, language } = body;
 
     if (!name || !email) {
       return NextResponse.json(
@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
       service,
       formName,
       template: template || DEFAULT_AI_TEMPLATE,
+      language: language === "en" ? "en" : "tr",
     });
 
     return NextResponse.json({

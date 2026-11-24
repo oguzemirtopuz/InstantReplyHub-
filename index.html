@@ -1,0 +1,308 @@
+
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>Live App Sandbox</title>
+          
+          <!-- 1. ADIM: İLK VE ANINDA ÇALIŞAN HATA YAKALAYICI VE GÜVENLİK ZAMANLAYICISI -->
+          <script>
+            (function() {
+              window.__step = function(msg) {
+                var el = document.getElementById('loading-step-text');
+                if (el) el.innerText = msg;
+              };
+
+              window.showError = function(msg, source) {
+                if (window.__safetyTimer) clearTimeout(window.__safetyTimer);
+                var loader = document.getElementById('loading-state');
+                if (loader) loader.style.display = 'none';
+                var errBox = document.getElementById('error-box');
+                if (errBox) {
+                  errBox.style.display = 'block';
+                  errBox.innerHTML = '<div style="font-weight:700; font-size:13px; margin-bottom:8px; color:#991b1b; display:flex; align-items:center; gap:6px;">' +
+                    '<span>⚠️</span><span>Uygulama Çalıştırma Hatası</span></div>' +
+                    '<div style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:11px; background:#fff; border:1px solid #fecaca; padding:10px; border-radius:8px; overflow-x:auto;">' +
+                    String(msg).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>' +
+                    (source ? '<div style="color:#b91c1c; font-size:11px; margin-top:8px;">Kaynak: ' + String(source).replace(/</g, '&lt;') + '</div>' : '') +
+                    '<div style="margin-top:14px; display:flex; gap:8px;">' +
+                    '<button onclick="location.reload()" style="padding:6px 14px; background:#171717; color:#fff; border:none; border-radius:8px; font-size:11px; font-weight:600; cursor:pointer;">Yeniden Başlat</button>' +
+                    '</div>';
+                }
+              };
+
+              window.onerror = function(message, source, lineno, colno, error) {
+                if (window.__CurrentApp) return;
+                window.showError(message || (error && error.message) || 'Bilinmeyen script hatası', source ? source + ':' + lineno : '');
+              };
+
+              window.onunhandledrejection = function(e) {
+                if (window.__CurrentApp) return;
+                window.showError(e.reason ? (e.reason.message || String(e.reason)) : 'Bilinmeyen asenkron hata');
+              };
+
+              // Güvenlik kilidi: 12 saniye içinde render edilmezse kullanıcıyı bilgilendir
+              window.__safetyTimer = setTimeout(function() {
+                var loader = document.getElementById('loading-state');
+                if (loader && loader.style.display !== 'none') {
+                  window.showError('Uygulama zamanında başlatılamadı. Kütüphaneler veya derleme beklenenden uzun sürdü. Lütfen "Yeniden Başlat" butonuna tıklayın.');
+                }
+              }, 12000);
+            })();
+          </script>
+
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            body { font-family: system-ui, -apple-system, sans-serif; margin: 0; min-height: 100vh; background-color: #fafafa; }
+            #loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 350px; color: #525252; font-size: 13px; gap: 12px; }
+            .spinner { width: 30px; height: 30px; border: 3px solid #e5e5e5; border-top-color: #171717; border-radius: 50%; animation: spin 0.8s linear infinite; }
+            @keyframes spin { to { transform: rotate(360deg); } }
+            #loading-step-text { font-size: 11px; color: #737373; font-weight: 400; }
+            #error-box { display:none; color:#991b1b; background:#fef2f2; border:1px solid #fecaca; padding:18px; border-radius:14px; margin:20px; line-height:1.5; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+          </style>
+        </head>
+        <body class="bg-neutral-50 p-4">
+          <div id="loading-state">
+            <div class="spinner"></div>
+            <span class="font-semibold text-neutral-800">Uygulama derleniyor ve başlatılıyor...</span>
+            <span id="loading-step-text">Gerekli kütüphaneler hazırlanıyor...</span>
+          </div>
+          <div id="root"></div>
+          <div id="error-box"></div>
+
+          <!-- Kullanıcı kodu güvenli JSON veri bloğu -->
+          <script type="application/json" id="user-code-data">"function App() {\n  const [view, setView] = React.useState('welcome')\n  const [user, setUser] = React.useState(null)\n  const [integration, setIntegration] = React.useState(null)\n  const [leads, setLeads] = React.useState([])\n  const [selectedLead, setSelectedLead] = React.useState(null)\n  const [metrics, setMetrics] = React.useState({ total: 0, responded: 0, avgResponseTime: 0 })\n\n  // Simulate AI response generation\n  const generateResponse = (lead) =\u003e {\n    const response = `Merhaba ${lead.name}, ilginiz için teşekkürler! En kısa sürede sizinle iletişime geçeceğiz. 🚀`\n    const now = Date.now()\n    const updatedLead = { ...lead, response, status: 'responded', respondedAt: now }\n    setLeads((prev) =\u003e prev.map((l) =\u003e (l.id === lead.id ? updatedLead : l)))\n  }\n\n  // Update metrics when leads change\n  React.useEffect(() =\u003e {\n    const total = leads.length\n    const responded = leads.filter((l) =\u003e l.status === 'responded').length\n    const responseTimes = leads\n      .filter((l) =\u003e l.status === 'responded')\n      .map((l) =\u003e l.respondedAt - l.createdAt)\n    const avgResponseTime =\n      responseTimes.length \u003e 0\n        ? Math.round(responseTimes.reduce((a, b) =\u003e a + b, 0) / responseTimes.length / 1000)\n        : 0\n    setMetrics({ total, responded, avgResponseTime })\n  }, [leads])\n\n  // Handlers\n  const handleRegister = (e) =\u003e {\n    e.preventDefault()\n    const email = e.target.email.value\n    setUser({ email })\n    setView('integration')\n  }\n\n  const handleConnectIntegration = (e) =\u003e {\n    e.preventDefault()\n    const platform = e.target.platform.value\n    setIntegration(platform)\n    setView('dashboard')\n  }\n\n  const handleNewLead = (e) =\u003e {\n    e.preventDefault()\n    const name = e.target.name.value\n    const email = e.target.email.value\n    const newLead = {\n      id: Date.now(),\n      name,\n      email,\n      status: 'new',\n      createdAt: Date.now(),\n    }\n    setLeads((prev) =\u003e [...prev, newLead])\n    // Auto generate AI response after short delay\n    setTimeout(() =\u003e generateResponse(newLead), 1500)\n  }\n\n  const handleExport = () =\u003e {\n    const dataStr = JSON.stringify(leads, null, 2)\n    const blob = new Blob([dataStr], { type: 'application/json' })\n    const url = URL.createObjectURL(blob)\n    const a = document.createElement('a')\n    a.href = url\n    a.download = 'leads.json'\n    a.click()\n    URL.revokeObjectURL(url)\n  }\n\n  // Views\n  const renderWelcome = () =\u003e (\n    \u003cdiv className=\"flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4\"\u003e\n      \u003ch1 className=\"text-3xl font-bold mb-6\"\u003eInstantReplyHub 🚀\u003c/h1\u003e\n      \u003cform onSubmit={handleRegister} className=\"w-full max-w-sm bg-white p-6 rounded shadow\"\u003e\n        \u003clabel className=\"block mb-2 font-medium\"\u003eE‑posta\u003c/label\u003e\n        \u003cinput\n          name=\"email\"\n          type=\"email\"\n          required\n          className=\"w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500\"\n        /\u003e\n        \u003cbutton\n          type=\"submit\"\n          className=\"w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition\"\n        \u003e\n          Başla ✨\n        \u003c/button\u003e\n      \u003c/form\u003e\n    \u003c/div\u003e\n  )\n\n  const renderIntegration = () =\u003e (\n    \u003cdiv className=\"flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4\"\u003e\n      \u003ch2 className=\"text-2xl font-semibold mb-4\"\u003eForm Entegrasyonu Bağla ⚙️\u003c/h2\u003e\n      \u003cform onSubmit={handleConnectIntegration} className=\"w-full max-w-md bg-white p-6 rounded shadow\"\u003e\n        \u003clabel className=\"block mb-2 font-medium\"\u003ePlatform\u003c/label\u003e\n        \u003cselect\n          name=\"platform\"\n          required\n          className=\"w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500\"\n        \u003e\n          \u003coption value=\"\"\u003eSeçiniz...\u003c/option\u003e\n          \u003coption value=\"Typeform\"\u003eTypeform\u003c/option\u003e\n          \u003coption value=\"Webflow\"\u003eWebflow\u003c/option\u003e\n          \u003coption value=\"Custom\"\u003eCustom\u003c/option\u003e\n        \u003c/select\u003e\n        \u003cbutton\n          type=\"submit\"\n          className=\"w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition\"\n        \u003e\n          Bağla 📊\n        \u003c/button\u003e\n      \u003c/form\u003e\n    \u003c/div\u003e\n  )\n\n  const renderDashboard = () =\u003e (\n    \u003cdiv className=\"min-h-screen bg-gray-100 p-4\"\u003e\n      \u003cheader className=\"flex justify-between items-center mb-6\"\u003e\n        \u003ch1 className=\"text-2xl font-bold\"\u003eDashboard 📈\u003c/h1\u003e\n        \u003cdiv className=\"flex gap-2\"\u003e\n          \u003cbutton\n            onClick={() =\u003e setView('report')}\n            className=\"bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition\"\n          \u003e\n            Rapor Al 📊\n          \u003c/button\u003e\n          \u003cbutton\n            onClick={() =\u003e setView('integration')}\n            className=\"bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition\"\n          \u003e\n            Entegrasyon 🔧\n          \u003c/button\u003e\n        \u003c/div\u003e\n      \u003c/header\u003e\n\n      \u003csection className=\"grid grid-cols-1 md:grid-cols-3 gap-4 mb-6\"\u003e\n        \u003cdiv className=\"bg-white p-4 rounded shadow\"\u003e\n          \u003ch3 className=\"font-medium mb-2\"\u003eToplam Lead 📥\u003c/h3\u003e\n          \u003cp className=\"text-2xl\"\u003e{metrics.total}\u003c/p\u003e\n        \u003c/div\u003e\n        \u003cdiv className=\"bg-white p-4 rounded shadow\"\u003e\n          \u003ch3 className=\"font-medium mb-2\"\u003eYanıtlanan 📤\u003c/h3\u003e\n          \u003cp className=\"text-2xl\"\u003e{metrics.responded}\u003c/p\u003e\n        \u003c/div\u003e\n        \u003cdiv className=\"bg-white p-4 rounded shadow\"\u003e\n          \u003ch3 className=\"font-medium mb-2\"\u003eOrtalama Yanıt Süresi (s)\u003c/h3\u003e\n          \u003cp className=\"text-2xl\"\u003e{metrics.avgResponseTime}\u003c/p\u003e\n        \u003c/div\u003e\n      \u003c/section\u003e\n\n      \u003csection className=\"bg-white rounded shadow p-4\"\u003e\n        \u003ch3 className=\"font-semibold mb-4\"\u003eLead Listesi 💡\u003c/h3\u003e\n        {leads.length === 0 ? (\n          \u003cp className=\"text-gray-500\"\u003eHenüz lead yok. Formu test edin.\u003c/p\u003e\n        ) : (\n          \u003ctable className=\"w-full text-left\"\u003e\n            \u003cthead\u003e\n              \u003ctr className=\"border-b\"\u003e\n                \u003cth className=\"pb-2\"\u003eİsim\u003c/th\u003e\n                \u003cth className=\"pb-2\"\u003eE‑posta\u003c/th\u003e\n                \u003cth className=\"pb-2\"\u003eDurum\u003c/th\u003e\n                \u003cth className=\"pb-2\"\u003eAksiyon\u003c/th\u003e\n              \u003c/tr\u003e\n            \u003c/thead\u003e\n            \u003ctbody\u003e\n              {leads.map((lead) =\u003e (\n                \u003ctr key={lead.id} className=\"border-b\"\u003e\n                  \u003ctd className=\"py-2\"\u003e{lead.name}\u003c/td\u003e\n                  \u003ctd className=\"py-2\"\u003e{lead.email}\u003c/td\u003e\n                  \u003ctd className=\"py-2 capitalize\"\u003e{lead.status}\u003c/td\u003e\n                  \u003ctd className=\"py-2\"\u003e\n                    \u003cbutton\n                      onClick={() =\u003e {\n                        setSelectedLead(lead)\n                        setView('leadDetail')\n                      }}\n                      className=\"text-blue-600 hover:underline\"\n                    \u003e\n                      Detay 🔍\n                    \u003c/button\u003e\n                  \u003c/td\u003e\n                \u003c/tr\u003e\n              ))}\n            \u003c/tbody\u003e\n          \u003c/table\u003e\n        )}\n      \u003c/section\u003e\n\n      \u003csection className=\"mt-6 bg-white rounded shadow p-4\"\u003e\n        \u003ch3 className=\"font-semibold mb-4\"\u003eYeni Lead Simülasyonu ✨\u003c/h3\u003e\n        \u003cform onSubmit={handleNewLead} className=\"grid grid-cols-1 md:grid-cols-2 gap-4\"\u003e\n          \u003cinput\n            name=\"name\"\n            placeholder=\"İsim\"\n            required\n            className=\"border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500\"\n          /\u003e\n          \u003cinput\n            name=\"email\"\n            placeholder=\"E‑posta\"\n            type=\"email\"\n            required\n            className=\"border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500\"\n          /\u003e\n          \u003cbutton\n            type=\"submit\"\n            className=\"col-span-2 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition\"\n          \u003e\n            Lead Ekle 🚀\n          \u003c/button\u003e\n        \u003c/form\u003e\n      \u003c/section\u003e\n    \u003c/div\u003e\n  )\n\n  const renderLeadDetail = () =\u003e (\n    \u003cdiv className=\"min-h-screen bg-gray-50 flex items-center justify-center p-4\"\u003e\n      \u003cdiv className=\"bg-white rounded shadow p-6 w-full max-w-lg\"\u003e\n        \u003ch2 className=\"text-xl font-bold mb-4\"\u003eLead Detayı 🔎\u003c/h2\u003e\n        {selectedLead && (\n          \u003c\u003e\n            \u003cp\u003e\n              \u003cstrong\u003eİsim:\u003c/strong\u003e {selectedLead.name}\n            \u003c/p\u003e\n            \u003cp\u003e\n              \u003cstrong\u003eE‑posta:\u003c/strong\u003e {selectedLead.email}\n            \u003c/p\u003e\n            \u003cp\u003e\n              \u003cstrong\u003eDurum:\u003c/strong\u003e {selectedLead.status}\n            \u003c/p\u003e\n            {selectedLead.response && (\n              \u003cp className=\"mt-2 p-2 bg-gray-100 rounded\"\u003e\n                \u003cstrong\u003eOluşturulan Yanıt:\u003c/strong\u003e {selectedLead.response}\n              \u003c/p\u003e\n            )}\n          \u003c/\u003e\n        )}\n        \u003cdiv className=\"mt-4 flex gap-2\"\u003e\n          \u003cbutton\n            onClick={() =\u003e setView('dashboard')}\n            className=\"bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition\"\n          \u003e\n            Geri Dön\n          \u003c/button\u003e\n        \u003c/div\u003e\n      \u003c/div\u003e\n    \u003c/div\u003e\n  )\n\n  const renderReport = () =\u003e (\n    \u003cdiv className=\"min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4\"\u003e\n      \u003ch2 className=\"text-2xl font-semibold mb-6\"\u003eRapor & Dışa Aktarım 📂\u003c/h2\u003e\n      \u003cpre className=\"bg-white p-4 rounded shadow w-full max-w-2xl overflow-auto\"\u003e\n        {JSON.stringify(leads, null, 2)}\n      \u003c/pre\u003e\n      \u003cdiv className=\"mt-4 flex gap-2\"\u003e\n        \u003cbutton\n          onClick={handleExport}\n          className=\"bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition\"\n        \u003e\n          JSON Olarak İndir 💾\n        \u003c/button\u003e\n        \u003cbutton\n          onClick={() =\u003e setView('dashboard')}\n          className=\"bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition\"\n        \u003e\n          Geri Dön\n        \u003c/button\u003e\n      \u003c/div\u003e\n    \u003c/div\u003e\n  )\n\n  // Main render\n  return (\n    \u003c\u003e\n      {view === 'welcome' && renderWelcome()}\n      {view === 'integration' && renderIntegration()}\n      {view === 'dashboard' && renderDashboard()}\n      {view === 'leadDetail' && renderLeadDetail()}\n      {view === 'report' && renderReport()}\n    \u003c/\u003e\n  )\n}"</script>
+
+          <!-- Çekirdek Yükleyici ve Çalıştırıcı -->
+          <script>
+            (function() {
+              // Harici ikonlar ve mock servisler
+              window.LucideIcons = new Proxy({}, {
+                get: function(target, prop) {
+                  return function LucideFallback(props) {
+                    if (!window.React) return null;
+                    return window.React.createElement('span', {
+                      className: 'inline-flex items-center justify-center ' + ((props && props.className) || ''),
+                      style: { display: 'inline-flex', verticalAlign: 'middle', fontSize: '1.1em' }
+                    }, '✦');
+                  };
+                }
+              });
+
+              window.supabase = {
+                auth: {
+                  getUser: async function() { return { data: { user: { id: 'demo-user-1', email: 'demo@saas.com' } }, error: null }; },
+                  getSession: async function() { return { data: { session: {} }, error: null }; },
+                  signInWithPassword: async function() { return { data: { user: { id: 'demo-user-1' } }, error: null }; },
+                  signUp: async function() { return { data: { user: { id: 'demo-user-1' } }, error: null }; },
+                  signOut: async function() { return { error: null }; },
+                  deleteUser: async function() { return { error: null }; },
+                  onAuthStateChange: function() { return { data: { subscription: { unsubscribe: function() {} } } }; }
+                },
+                from: function(tableName) {
+                  var chain = {
+                    select: function() { return chain; },
+                    insert: function() { return chain; },
+                    update: function() { return chain; },
+                    delete: function() { return chain; },
+                    eq: function() { return chain; },
+                    neq: function() { return chain; },
+                    gt: function() { return chain; },
+                    lt: function() { return chain; },
+                    order: function() { return chain; },
+                    limit: function() { return chain; },
+                    single: function() { return Promise.resolve({ data: {}, error: null }); },
+                    then: function(onSuccess, onError) {
+                      return Promise.resolve({ data: [], error: null }).then(onSuccess, onError);
+                    }
+                  };
+                  return chain;
+                }
+              };
+              window.createClient = function() { return window.supabase; };
+
+              // Scriptleri dinamik, sıra duyarlı ve fallback destekli yükleyen fonksiyon
+              function loadScriptSequential(urls, name) {
+                return new Promise(function(resolve, reject) {
+                  var idx = 0;
+                  function tryLoad() {
+                    if (idx >= urls.length) {
+                      reject(new Error(name + ' kütüphanesi hiçbir kaynaktan yüklenemedi.'));
+                      return;
+                    }
+                    var url = urls[idx++];
+                    var s = document.createElement('script');
+                    s.src = url;
+                    s.onload = function() { resolve(); };
+                    s.onerror = function() {
+                      console.warn(name + ' ' + url + ' üzerinden yüklenemedi, alternatif deneniyor...');
+                      s.remove();
+                      tryLoad();
+                    };
+                    document.head.appendChild(s);
+                  }
+                  tryLoad();
+                });
+              }
+
+              async function launchApp() {
+                try {
+                  // 1. React Motoru
+                  if (!window.React) {
+                    window.__step('React motoru yükleniyor...');
+                    await loadScriptSequential([
+                      '/vendor/react.production.min.js',
+                      'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
+                      'https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js',
+                      'https://unpkg.com/react@18.2.0/umd/react.production.min.js'
+                    ], 'React');
+                  }
+
+                  // 2. React DOM Motoru
+                  if (!window.ReactDOM) {
+                    window.__step('React DOM motoru yükleniyor...');
+                    await loadScriptSequential([
+                      '/vendor/react-dom.production.min.js',
+                      'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
+                      'https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js',
+                      'https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js'
+                    ], 'ReactDOM');
+                  }
+
+                  // 3. Babel Standalone Derleyici
+                  if (!window.Babel) {
+                    window.__step('Babel derleyici hazırlanıyor...');
+                    await loadScriptSequential([
+                      '/vendor/babel.min.js',
+                      'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.9/babel.min.js',
+                      'https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.9/babel.min.js',
+                      'https://unpkg.com/@babel/standalone@7.26.9/babel.min.js'
+                    ], 'Babel');
+                  }
+
+                  window.__step('Uygulama kodu derleniyor ve bağlanıyor...');
+
+                  // Kullanıcı kodunu güvenli JSON bloğundan al
+                  var codeDataEl = document.getElementById('user-code-data');
+                  if (!codeDataEl) {
+                    window.showError('Kullanıcı kodu veri bloğu bulunamadı.');
+                    return;
+                  }
+                  var rawCode = JSON.parse(codeDataEl.textContent || '""');
+
+                  // React Error Boundary
+                  var ErrorBoundary = (function() {
+                    function EB(props) {
+                      React.Component.call(this, props);
+                      this.state = { hasError: false, error: null };
+                    }
+                    EB.prototype = Object.create(React.Component.prototype);
+                    EB.prototype.constructor = EB;
+                    EB.getDerivedStateFromError = function(err) {
+                      return { hasError: true, error: err };
+                    };
+                    EB.prototype.componentDidCatch = function(err, info) {
+                      console.error("Bileşen Çalışma Hatası:", err, info);
+                    };
+                    EB.prototype.render = function() {
+                      if (this.state.hasError) {
+                        return React.createElement('div', {
+                          className: 'p-6 bg-red-50 border border-red-200 rounded-xl text-red-900 font-sans m-3'
+                        }, [
+                          React.createElement('h3', { className: 'font-bold text-sm text-red-900 mb-1', key: 'title' }, 'Bileşen Çalışma Hatası:'),
+                          React.createElement('pre', { className: 'text-xs text-red-700 whitespace-pre-wrap font-mono mt-2', key: 'msg' }, this.state.error ? (this.state.error.message || String(this.state.error)) : 'Bilinmeyen hata'),
+                          React.createElement('button', {
+                            key: 'btn',
+                            className: 'mt-3 px-3 py-1.5 bg-neutral-900 text-white rounded-lg text-xs font-medium cursor-pointer',
+                            onClick: function() { location.reload(); }
+                          }, 'Yeniden Yükle')
+                        ]);
+                      }
+                      return this.props.children;
+                    };
+                    return EB;
+                  })();
+
+                  // React hook'larını window seviyesinde hazırla
+                  window.useState = React.useState;
+                  window.useEffect = React.useEffect;
+                  window.useMemo = React.useMemo;
+                  window.useRef = React.useRef;
+                  window.useCallback = React.useCallback;
+                  window.useContext = React.useContext;
+                  window.useReducer = React.useReducer;
+                  window.useId = React.useId;
+
+                  // Kod içindeki mükerrer const { useState } = React bildirimlerini temizle
+                  rawCode = rawCode.replace(/(?:const|let|var)s*{[^}]*}s*=s*React;?/g, '/* React hooks global */');
+
+                  // Kod içindeki tüm PascalCase ikon veya alt bileşenleri yakala
+                  var detectedIcons = Array.from(new Set(rawCode.match(/<([A-Z][a-zA-Z0-9_]*)/g) || []))
+                    .map(function(t) { return t.slice(1); })
+                    .filter(function(t) { return !['App', 'Main', 'React', 'Fragment', 'ErrorBoundary'].includes(t); });
+
+                  var iconDeclarations = detectedIcons.map(function(name) {
+                    return "if (typeof " + name + " === 'undefined') { var " + name + " = window.LucideIcons['" + name + "']; }";
+                  }).join(String.fromCharCode(10));
+
+                  window.__CurrentApp = null;
+
+                  var codeToTransform = [
+                    "var useState = React.useState, useEffect = React.useEffect, useMemo = React.useMemo, useRef = React.useRef, useCallback = React.useCallback;",
+                    iconDeclarations,
+                    rawCode,
+                    "var _candidate = null;",
+                    "if (typeof App !== 'undefined') { _candidate = App; }",
+                    "else if (typeof Main !== 'undefined') { _candidate = Main; }",
+                    "else if (typeof SaaSApp !== 'undefined') { _candidate = SaaSApp; }",
+                    "else if (typeof Dashboard !== 'undefined') { _candidate = Dashboard; }",
+                    "else if (typeof Application !== 'undefined') { _candidate = Application; }",
+                    "window.__CurrentApp = _candidate;"
+                  ].join(String.fromCharCode(10));
+
+                  var transformed = window.Babel.transform(
+                    codeToTransform,
+                    { 
+                      filename: 'app.tsx',
+                      presets: ['typescript', ['react', { runtime: 'classic' }]] 
+                    }
+                  ).code;
+
+                  // Ekstra güvenlik: derlenmiş kodda kalmış olabilecek tüm import satırlarını güvenle arındır
+                  transformed = transformed
+                    .split(String.fromCharCode(10))
+                    .filter(function(line) {
+                      var trimmed = line.trim();
+                      return !trimmed.startsWith('import ') && !trimmed.startsWith('import{') && !trimmed.startsWith('import"') && !trimmed.startsWith("import'");
+                    })
+                    .join(String.fromCharCode(10));
+
+                  new Function(transformed)();
+                  var ResolvedApp = window.__CurrentApp;
+
+                  // Başarıyla bitti, güvenlik sayacını durdur ve loader'ı gizle
+                  if (window.__safetyTimer) clearTimeout(window.__safetyTimer);
+                  var loader = document.getElementById('loading-state');
+                  if (loader) loader.style.display = 'none';
+
+                  if (ResolvedApp) {
+                    var rootEl = document.getElementById('root');
+                    var root = ReactDOM.createRoot(rootEl);
+                    root.render(React.createElement(ErrorBoundary, null, React.createElement(ResolvedApp)));
+                  } else {
+                    window.showError('Ana bileşen (App) tanımlanamadı. Lütfen AI asistanından kodu yenilemesini isteyin.');
+                  }
+                } catch (err) {
+                  console.error("Sandbox derleme/çalıştırma hatası:", err);
+                  window.showError(err.message || String(err));
+                }
+              }
+
+              // Başlat
+              launchApp();
+            })();
+          </script>
+        </body>
+      </html>
+    
